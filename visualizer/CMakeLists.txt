@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.26)
 
 # 프로젝트 이름 및 버전
-project(OpenGLProject VERSION 1.0)
+project(aeronSW_visulaizer VERSION 1.0)
 
 # C++ 표준 설정
 set(CMAKE_CXX_STANDARD 17)

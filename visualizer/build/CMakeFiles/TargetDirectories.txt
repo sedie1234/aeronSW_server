@@ -1,3 +1,0 @@
-/home/hwan/workspace/aeronSW_server/visualizer/build/CMakeFiles/OpenGLProject.dir
-/home/hwan/workspace/aeronSW_server/visualizer/build/CMakeFiles/edit_cache.dir
-/home/hwan/workspace/aeronSW_server/visualizer/build/CMakeFiles/rebuild_cache.dir
