@@ -1,5 +1,6 @@
 # 0. aeronSW-server 개요
  - 항공전자 서버용 코드 모음
+ - ubuntu 20.04 환경
 
 # 1. aeronSW_visualizer
  - 데모 + 디버깅을 위한 visualizer, opengl로 개발
