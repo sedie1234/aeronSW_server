@@ -9,10 +9,13 @@
 class Space {
 public:
     void addPoint(const glm::vec3& point);
+    void clearPoints();
     void addLine(const glm::vec3& start, const glm::vec3& end,
                 const GLfloat R, const GLfloat G, const GLfloat B);
+    void clearLines();
     void addObj(const glm::vec3& point, const glm::vec3& xway, 
                 const glm::vec3& yway, const glm::vec3& zway);
+    void drawGrid();
     void render() const;
 
 private:

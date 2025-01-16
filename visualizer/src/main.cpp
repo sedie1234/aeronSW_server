@@ -17,8 +17,8 @@ Camera camera;
 Space space;
 bool leftMousePressed = false;
 double lastMouseX = 0.0, lastMouseY = 0.0;
-float horizontalAngle = 0.0f, verticalAngle = 0.0f; // 카메라의 회전 각도
-float orbitRadius = 5.0f;                           // 궤도 반지름
+float horizontalAngle = INIT_CAM_HANGLE, verticalAngle = INIT_CAM_VANGLE; // 카메라의 회전 각도
+float orbitRadius = INIT_CAM_RADIUS;                           // 궤도 반지름
 
 // Function Prototypes
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -27,6 +27,7 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void setupViewport(const GLuint width, const GLuint height);
 
+
 int main() {
     // Initialize GLFW
     if (!glfwInit()) {
@@ -34,7 +35,7 @@ int main() {
         return -1;
     }
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Orbiting Camera", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Orbiting Camera", nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -48,7 +49,7 @@ int main() {
         return -1;
     }
 
-    setupViewport(800, 600);
+    setupViewport(WINDOW_WIDTH, WINDOW_HEIGHT);
 
     // Enable depth testing
     glEnable(GL_DEPTH_TEST);
@@ -62,6 +63,10 @@ int main() {
     /*********************************************/
     /******************set scene******************/
     /*********************************************/
+    
+    //scene set    
+    space.drawGrid();
+    
 
     space.addPoint(glm::vec3(0.0f, 0.0f, 0.0f));  // (0,0,0)
     space.addPoint(glm::vec3(1.0f, 1.0f, 0.0f));  // (1,1,0)
@@ -91,10 +96,18 @@ int main() {
         // Clear screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        //set scene
+        space.clearPoints();
+        space.clearLines();
+        space.drawGrid();
+        space.addObj(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f),
+                    glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+
         // Update camera position based on spherical coordinates
-        float x = orbitRadius * glm::cos(verticalAngle) * glm::sin(horizontalAngle);
-        float y = orbitRadius * glm::sin(verticalAngle);
-        float z = orbitRadius * glm::cos(verticalAngle) * glm::cos(horizontalAngle);
+        float x = orbitRadius * glm::cos(verticalAngle) * glm::cos(horizontalAngle);
+        float y = orbitRadius * glm::cos(verticalAngle) * glm::sin(horizontalAngle);
+        float z = orbitRadius * glm::sin(verticalAngle);
         camera.setPosition(glm::vec3(x, y, z));
         camera.setTarget(glm::vec3(0.0f, 0.0f, 0.0f));
 
@@ -147,10 +160,17 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
         horizontalAngle += (float)(dx * ORBIT_SPEED);
         verticalAngle -= (float)(dy * ORBIT_SPEED);
         
-    }
+        //when I click first_click, why vertialAngle go to zero???
 
+        // 상하 회전 제한 (90도 범위 유지)
+        if (verticalAngle > glm::radians(89.0f)) verticalAngle = glm::radians(89.0f);
+        if (verticalAngle < glm::radians(-89.0f)) verticalAngle = glm::radians(-89.0f);
+
+
+    }
     lastMouseX = xpos;
     lastMouseY = ypos;
+
 }
 
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
@@ -164,3 +184,4 @@ void setupViewport(const GLuint width, const GLuint height) {
     glLoadIdentity();
     gluPerspective(45.0, static_cast<double>(width) / height, 0.1, 100.0);
 }
+

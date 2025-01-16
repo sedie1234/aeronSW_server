@@ -23,6 +23,7 @@ set(SRC_FILES
 set(HEADER_FILES
     src/camera.h
     src/space.h
+    src/configs.h
 )
 
 # 실행 파일 생성
