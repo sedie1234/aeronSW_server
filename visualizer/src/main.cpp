@@ -103,6 +103,55 @@ int main() {
         space.addObj(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f),
                     glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
+        glm::vec3 obj1Position(2.0f, 3.0f, -5.0f);
+        glm::vec3 obj1E1(0.577f, 0.577f, 0.577f);  // 대각선 방향
+        glm::vec3 obj1E2(-0.707f, 0.707f, 0.0f);   // X-Y 평면에서 직교
+        glm::vec3 obj1E3(-0.408f, -0.408f, 0.816f); // Z축에서 직교
+
+
+        // 세트 2
+        glm::vec3 obj2Position(5.0f, 1.0f, -2.0f);
+        glm::vec3 obj2E1(0.707f, 0.707f, 0.0f);  // X-Y 평면에서 45도
+        glm::vec3 obj2E2(-0.707f, 0.707f, 0.0f); // X-Y 평면에서 반대 방향
+        glm::vec3 obj2E3(0.0f, 0.0f, 1.0f);      // Z축 (직교)
+
+        // 세트 3
+        glm::vec3 obj3Position(-2.0f, -1.0f, 4.0f);
+        glm::vec3 obj3E1(0.577f, 0.577f, 0.577f);  // X, Y, Z 축 동일 기여
+        glm::vec3 obj3E2(-0.707f, 0.707f, 0.0f);   // X-Y 평면에서 대각선
+        glm::vec3 obj3E3(-0.408f, -0.408f, 0.816f); // Z축 기여 증가
+
+
+        space.addObj(obj1Position, obj1E1, obj1E2, obj1E3);
+        space.addObj(obj2Position, obj2E1, obj2E2, obj2E3);
+        space.addObj(obj3Position, obj3E1, obj3E2, obj3E3);
+
+        // 스프링 매개변수
+        int numPoints = 200;       // 총 포인트 개수
+        float radius = 1.0f;      // 스프링 반지름
+        float height = 10.0f;     // 스프링 전체 높이
+        int turns = 3;            // 스프링의 회전 수
+
+        // 포인트 저장 벡터
+        std::vector<glm::vec3> points;
+
+        // 스프링 포인트 계산 및 저장
+        for (int i = 0; i < numPoints; ++i) {
+            float t = static_cast<float>(i) / numPoints; // 0 ~ 1 비율
+            float theta = glm::two_pi<float>() * turns * t; // 나선형 각도
+            float z = height * t;                          // 높이 증가
+
+            float x = radius * glm::cos(theta); // X 좌표
+            float y = radius * glm::sin(theta); // Y 좌표
+
+            points.emplace_back(x+5, y+3, z+1);
+        }
+
+        for(auto &point : points){
+            space.addPoint(point);
+        }
+
+
 
         // Update camera position based on spherical coordinates
         float x = orbitRadius * glm::cos(verticalAngle) * glm::cos(horizontalAngle);

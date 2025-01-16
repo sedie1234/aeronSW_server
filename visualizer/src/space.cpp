@@ -29,9 +29,9 @@ void Space::clearLines(){
 void Space::addObj(const glm::vec3& point, const glm::vec3& xway, 
                 const glm::vec3& yway, const glm::vec3& zway){
 
-    lines.emplace_back(point, xway, 1.0f, 0.0f, 0.0f);
-    lines.emplace_back(point, yway, 0.0f, 1.0f, 0.0f);
-    lines.emplace_back(point, zway, 1.0f, 1.0f, 0.0f);
+    lines.emplace_back(point, point + xway, 1.0f, 0.0f, 0.0f);
+    lines.emplace_back(point, point + yway, 0.0f, 1.0f, 0.0f);
+    lines.emplace_back(point, point + zway, 1.0f, 1.0f, 0.0f);
 }
 
 // Helper function to draw a circle
