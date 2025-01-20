@@ -17,10 +17,15 @@
 // Globals
 Camera camera;
 Space space;
+
 bool leftMousePressed = false;
 double lastMouseX = 0.0, lastMouseY = 0.0;
 float horizontalAngle = INIT_CAM_HANGLE, verticalAngle = INIT_CAM_VANGLE; // 카메라의 회전 각도
 float orbitRadius = INIT_CAM_RADIUS;                           // 궤도 반지름
+
+glm::vec3 cameraPosition(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraTarget(0.0f, 0.0f, 0.0f);
+glm::vec3 up(0.0f, 1.0f, 0.0f);
 
 // argument callback function
 void printHowToUse();
@@ -60,7 +65,6 @@ int main(int argc, char* argv[]) {
                 std::string arg2 = argv[i];
                 if(arg2 == "-p"){ // file type = pcap type : -d -p [pcapfile] [json meta file]
 
-                    std::cout << 1+i << " : " << argc << std::endl;
                     if(2 + i < argc){
                         lidar_data_type = 1;
                         lidar_filename = argv[i+1];
@@ -91,7 +95,7 @@ int main(int argc, char* argv[]) {
     }
 
     /**** pcap lidar data example ****/
-    PointCloud(lidar_filename, lidar_metadata_filename, lidar_data_type);
+    PointCloud _cloud(lidar_filename, lidar_metadata_filename, lidar_data_type);
 
 
     /**** Initialize GLFW ****/ 
@@ -168,6 +172,9 @@ int main(int argc, char* argv[]) {
         space.clearPoints();
         space.clearLines();
         space.drawGrid();
+
+        _cloud.drawPoints();
+
         space.addObj(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f),
                     glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
@@ -188,7 +195,7 @@ int main(int argc, char* argv[]) {
         // 스프링 매개변수
         int numPoints = 200;       // 총 포인트 개수
         float radius = 1.0f;      // 스프링 반지름
-        float height = 10.0f;     // 스프링 전체 높이
+        float height = 10.0f;     // 스프링 전target체 높이
         int turns = 3;            // 스프링의 회전 수
 
         // 포인트 저장 벡터
@@ -213,11 +220,11 @@ int main(int argc, char* argv[]) {
 
 
         // Update camera position based on spherical coordinates
-        float x = orbitRadius * glm::cos(verticalAngle) * glm::cos(horizontalAngle);
-        float y = orbitRadius * glm::cos(verticalAngle) * glm::sin(horizontalAngle);
-        float z = orbitRadius * glm::sin(verticalAngle);
+        float x = orbitRadius * glm::cos(verticalAngle) * glm::cos(horizontalAngle) + cameraPosition.x;
+        float y = orbitRadius * glm::cos(verticalAngle) * glm::sin(horizontalAngle) + cameraPosition.y;
+        float z = orbitRadius * glm::sin(verticalAngle) + cameraPosition.z;
         camera.setPosition(glm::vec3(x, y, z));
-        camera.setTarget(glm::vec3(0.0f, 0.0f, 0.0f));
+        camera.setTarget(cameraTarget);
 
         // Apply camera view matrix
         glm::mat4 view = camera.getViewMatrix();
@@ -275,17 +282,28 @@ std::string getFileExtension(const std::string& fileName) {
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+        glm::vec3 cameraDirection(glm::cos(horizontalAngle),
+                                  glm::sin(horizontalAngle),
+                                  0.0f);
+        glm::vec3 cameraOrthoDirection(-glm::sin(horizontalAngle),
+                                       glm::cos(horizontalAngle),
+                                       0.0f);
         if (key == GLFW_KEY_W) {
-            verticalAngle += TRANSLATION_SPEED * ORBIT_SPEED;
+            cameraPosition -= CAMERA_SPEED * cameraDirection; // 앞으로 이동
+            cameraTarget -= CAMERA_SPEED * cameraDirection; // 앞으로 이동
         } else if (key == GLFW_KEY_S) {
-            verticalAngle -= TRANSLATION_SPEED * ORBIT_SPEED;
+            cameraPosition += CAMERA_SPEED * cameraDirection; // 뒤로 이동
+            cameraTarget += CAMERA_SPEED * cameraDirection; // 뒤로 이동
         } else if (key == GLFW_KEY_A) {
-            horizontalAngle -= TRANSLATION_SPEED * ORBIT_SPEED;
+            cameraPosition -= CAMERA_SPEED * cameraOrthoDirection; // 왼쪽 이동
+            cameraTarget -= CAMERA_SPEED * cameraOrthoDirection; // 왼쪽 이동
         } else if (key == GLFW_KEY_D) {
-            horizontalAngle += TRANSLATION_SPEED * ORBIT_SPEED;
+            cameraPosition += CAMERA_SPEED * cameraOrthoDirection; // 오른쪽 이동
+            cameraTarget += CAMERA_SPEED * cameraOrthoDirection; // 오른쪽 이동
         } else if (key == GLFW_KEY_ESCAPE) {
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         }
+        std::cout << horizontalAngle << ", " <<  cameraPosition.x << ", " << cameraPosition.y << std::endl;
     }
 }
 

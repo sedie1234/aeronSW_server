@@ -6,15 +6,58 @@
 #include <iostream>
 #include <vector>
 
-// #include <pcap.h>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/constants.hpp>
 
 //ouster sdk
 #include <ouster/client.h>
 #include <ouster/lidar_scan.h>
 #include <ouster/os_pcap.h>
-// #include <ouster/types.h>
+#include <ouster/types.h>
 
 #include "point_cloud.h"
+#include "space.h"
+
+extern Space space;
+
+constexpr std::size_t BUF_SIZE = 65536;
+
+void get_complete_scan(
+    std::shared_ptr<ouster::sensor_utils::playback_handle> handle,
+    ouster::LidarScan& scan, ouster::sensor::sensor_info& info) {
+    // Make sure we start at beginning
+    ouster::sensor_utils::replay_reset(*handle);
+
+    // Helper variable to help us identify first full frame
+    int first_frame_id = 0;
+
+    auto pf = get_format(info);
+    ouster::ScanBatcher batch_to_scan(info);
+
+    // Buffer to store raw packet data
+    ouster::sensor::LidarPacket packet(pf.lidar_packet_size);
+
+    ouster::sensor_utils::packet_info packet_info;
+
+    while (ouster::sensor_utils::next_packet_info(*handle, packet_info)) {
+        auto packet_size = ouster::sensor_utils::read_packet(
+            *handle, packet.buf.data(), packet.buf.size());
+
+        if (packet_size == pf.lidar_packet_size &&
+            packet_info.dst_port == info.config.udp_port_lidar) {
+            if (batch_to_scan(packet, scan)) {
+                if (first_frame_id == 0) {
+                    // end of first frame -- assume it is incomplete and skip
+                    first_frame_id = scan.frame_id;
+                } else if (first_frame_id != scan.frame_id)
+                    break;
+            }
+        }
+    }
+}
 
 PointCloud::PointCloud(std::string filename, std::string metafilename, int filetype){
 
@@ -26,92 +69,58 @@ PointCloud::PointCloud(std::string filename, std::string metafilename, int filet
 
 }
 
-#if 1
 
 void PointCloud::pcapParse(const std::string& pcap_path, const std::string& metadata_path) {
 
     // ouster::sensor_utils::replay_initialize(pcap_path);
-    auto stream_info = ouster::sensor_utils::get_stream_info(pcap_path);
-    std::cout << *stream_info << std::endl;
+    // auto stream_info = ouster::sensor_utils::get_stream_info(pcap_path);
+    // std::cout << *stream_info << std::endl;
 
-}
-
-#else
-void PointCloud::pcapParse(const std::string& pcap_path, const std::string& metadata_path) {
-
-    char errbuf[PCAP_ERRBUF_SIZE];
-
-    // open pcap
-    pcap_t* pcap = pcap_open_offline(pcap_path.c_str(), errbuf);
-    if (!pcap) {
-        std::cerr << "Failed to open pcap file: " << errbuf << std::endl;
-        return;
-    }
-
-    // Ouster packet filter : udp port 
-    const std::string filter = "udp port 7502";
-    struct bpf_program fp;
-    if (pcap_compile(pcap, &fp, filter.c_str(), 0, PCAP_NETMASK_UNKNOWN) == -1) {
-        std::cerr << "Failed to compile pcap filter: " << pcap_geterr(pcap) << std::endl;
-        pcap_close(pcap);
-        return;
-    }
-    if (pcap_setfilter(pcap, &fp) == -1) {
-        std::cerr << "Failed to set pcap filter: " << pcap_geterr(pcap) << std::endl;
-        pcap_close(pcap);
-        return;
-    }
-
-    std::cout << "Reading packets from pcap file: " << pcap_path << std::endl;
-
-    // get info
-    // open metadata
-
+    auto handle = ouster::sensor_utils::replay_initialize(pcap_path);
     auto info = ouster::sensor::metadata_from_json(metadata_path);
-    if (info.format.columns_per_frame == 0 || info.format.pixels_per_column == 0) {
-        std::cerr << "Invalid metadata file: " << metadata_path << std::endl;
-        return;
+
+    size_t w = info.format.columns_per_frame;
+    size_t h = info.format.pixels_per_column;
+
+    auto scan = ouster::LidarScan(info);
+
+    std::cerr << "Reading in scan from pcap..." << std::endl;
+    get_complete_scan(handle, scan, info);
+
+    // 1. Getting XYZ
+    std::cerr << "1. Calculating 3d Points... " << std::endl;
+    //! [doc-stag-cpp-xyz]
+    ouster::XYZLut lut = ouster::make_xyz_lut(info, true);
+    auto range = scan.field(ouster::sensor::ChanField::RANGE);
+    auto cloud = cartesian(range, lut);
+    //! [doc-etag-cpp-xyz]
+    //
+    std::cout << "range : " << range.size() << std::endl;
+    
+    std::cerr << "\nLet's see what the 2000th point in this cloud is...  ("
+              << cloud(2000, 0) << ", " << cloud(2000, 1) << ", "
+              << cloud(2000, 2) << ")" << std::endl;
+
+    for(int i=0; i<range.size(); i++){
+        glm::vec3 point(cloud(i, 0), cloud(i, 1), cloud(i, 2));
+        points.push_back(point);
+        // std::cerr << "\nLet's see what the " << i << "th point in this cloud is...  ("
+        //       << cloud(i, 0) << ", " << cloud(i, 1) << ", "
+        //       << cloud(i, 2) << ")" << std::endl;
     }
 
-    // std::ifstream metadata_file(metadata_path);
-    // if (!metadata_file) {
-    //     std::cerr << "Failed to open metadata file: " << metadata_path << std::endl;
-    //     return ;
-    // }
-
-    // // read metadata ,generte the sensor_info
-    // std::string metadata_json((std::istreambuf_iterator<char>(metadata_file)),
-    //                           std::istreambuf_iterator<char>());
-    // auto sensor_info = ouster::sensor::metadata_to_sensor_info(metadata_json);
-
-
-    // Ouster LidarScan
-    ouster::sensor::packet_format pf = ouster::sensor::get_format(info);
-    ouster::LidarScan scan(1024, 10);  // 1024x10 resolution
-
-    struct pcap_pkthdr* header;
-    const u_char* packet;
-
-    // loop reading packet
-    while (pcap_next_ex(pcap, &header, &packet) >= 0) {
-        if (header->caplen >= pf.lidar_packet_size) {
-            const uint8_t* lidar_packet = packet + (header->caplen - pf.lidar_packet_size);
-
-            // read packet data
-            std::cout << "packet_type : " << pf.pack
-            // auto column_data = lidar_packet + pf.lidar_column_offset(0);
-            // for (size_t i = 0; i < sensor_info.format.columns_per_frame; i++) {
-            //     auto intensity = pf.intensity(column_data, i);
-            //     auto range = pf.range(column_data, i);
-            //     std::cout << "Column " << i << ": Intensity = " << intensity << ", Range = " << range << std::endl;
-            // }
-        }
-    }
-
-    pcap_close(pcap);
+    
 
 }
-#endif
+
+void PointCloud::drawPoints(){
+
+    for(auto &point: points){
+        space.addPoint(point);
+    }
+    return;
+
+}
 
 void PointCloud::printHelp(int index){
     if(index == 2){ //support type
