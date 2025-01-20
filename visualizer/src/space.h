@@ -19,6 +19,9 @@ public:
     void render() const;
 
 private:
+    // time series points
+    // 
+    std::vector<std::pair<int, std::vector<glm::vec3>>> ts_points; //time series points
     std::vector<glm::vec3> points;
     //start point, end point, R, G, B
     std::vector<std::tuple<glm::vec3, glm::vec3, GLfloat, GLfloat, GLfloat>> lines; 

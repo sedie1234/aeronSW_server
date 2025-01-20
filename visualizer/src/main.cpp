@@ -6,10 +6,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/constants.hpp>
 #include <iostream>
+#include <string>
+
 #include "camera.h"
 #include "space.h"
 #include "configs.h"
-
+#include "point_cloud.h"
 
 
 // Globals
@@ -20,6 +22,12 @@ double lastMouseX = 0.0, lastMouseY = 0.0;
 float horizontalAngle = INIT_CAM_HANGLE, verticalAngle = INIT_CAM_VANGLE; // 카메라의 회전 각도
 float orbitRadius = INIT_CAM_RADIUS;                           // 궤도 반지름
 
+// argument callback function
+void printHowToUse();
+void printUsage();
+void printErr(int index);
+std::string getFileExtension(const std::string& fileName);
+
 // Function Prototypes
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
@@ -28,8 +36,65 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void setupViewport(const GLuint width, const GLuint height);
 
 
-int main() {
-    // Initialize GLFW
+int main(int argc, char* argv[]) {
+
+    /**** Option argument parsing (with no external lib) ****/
+
+    std::string lidar_filename;
+    std::string lidar_metadata_filename;
+    int lidar_data_type=0; //0 : none, 1:pcap
+
+    if(argc < 0){
+        printHowToUse();
+        printUsage();
+    }
+
+    // parser
+    for (int i=0; i<argc; i++){
+        std::string arg = argv[i];
+        if(arg == "-h" || arg == "--help"){
+            printUsage();
+        }else if((arg == "-d" || arg == "--data") ){
+            if(1 + i < argc){
+                i++;
+                std::string arg2 = argv[i];
+                if(arg2 == "-p"){ // file type = pcap type : -d -p [pcapfile] [json meta file]
+
+                    std::cout << 1+i << " : " << argc << std::endl;
+                    if(2 + i < argc){
+                        lidar_data_type = 1;
+                        lidar_filename = argv[i+1];
+                        lidar_metadata_filename = argv[i+2];
+                        
+                        if(getFileExtension(lidar_filename) != "pcap" ||
+                            getFileExtension(lidar_metadata_filename) != "json"){
+                            printErr(3);
+                            return 0;
+                        }
+                        
+                        i+=2;
+                        
+                    }else{
+                        printErr(3); // -d -p error print
+                    }
+                    
+
+                }else{
+                    printErr(2);
+                    return 0;
+                }
+            }else{
+                printErr(2); // -d error print
+                return 0;
+            }
+        }
+    }
+
+    /**** pcap lidar data example ****/
+    PointCloud(lidar_filename, lidar_metadata_filename, lidar_data_type);
+
+
+    /**** Initialize GLFW ****/ 
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return -1;
@@ -54,7 +119,8 @@ int main() {
     // Enable depth testing
     glEnable(GL_DEPTH_TEST);
 
-    // Set callbacks
+
+    /**** Set callbacks ****/ 
     glfwSetKeyCallback(window, keyCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetCursorPosCallback(window, cursorPosCallback);
@@ -91,12 +157,14 @@ int main() {
     /******************set scene******************/
     /*********************************************/
 
-    // Main loop
+    /**** Main loop ****/ 
     while (!glfwWindowShouldClose(window)) {
         // Clear screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //set scene
+
+
+        /**** draw screen ****/
         space.clearPoints();
         space.clearLines();
         space.drawGrid();
@@ -108,14 +176,6 @@ int main() {
         glm::vec3 obj1E2(-0.707f, 0.707f, 0.0f);   // X-Y 평면에서 직교
         glm::vec3 obj1E3(-0.408f, -0.408f, 0.816f); // Z축에서 직교
 
-
-        // 세트 2
-        glm::vec3 obj2Position(5.0f, 1.0f, -2.0f);
-        glm::vec3 obj2E1(0.707f, 0.707f, 0.0f);  // X-Y 평면에서 45도
-        glm::vec3 obj2E2(-0.707f, 0.707f, 0.0f); // X-Y 평면에서 반대 방향
-        glm::vec3 obj2E3(0.0f, 0.0f, 1.0f);      // Z축 (직교)
-
-        // 세트 3
         glm::vec3 obj3Position(-2.0f, -1.0f, 4.0f);
         glm::vec3 obj3E1(0.577f, 0.577f, 0.577f);  // X, Y, Z 축 동일 기여
         glm::vec3 obj3E2(-0.707f, 0.707f, 0.0f);   // X-Y 평면에서 대각선
@@ -123,7 +183,6 @@ int main() {
 
 
         space.addObj(obj1Position, obj1E1, obj1E2, obj1E3);
-        space.addObj(obj2Position, obj2E1, obj2E2, obj2E3);
         space.addObj(obj3Position, obj3E1, obj3E2, obj3E3);
 
         // 스프링 매개변수
@@ -176,6 +235,42 @@ int main() {
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
+}
+
+void printErr(int index){
+
+    std::cout << "[Occur the Error!!]" << std::endl;
+    if(index == 2){ // Error Number 2 : wrong argument with option -d
+        std::cout << "Option -d or --data need the additional option [filename]" << std::endl;
+        std::cout << "Usage : ./aeronSW-visualizer -d [Lidar Data filename]" << std::endl;
+        std::cout << "or check the arguments : ./aeronSW-visualizer -h" << std::endl;
+    }else if(index == 3){ // Error Number 3 : wron argumnet with option -d -p
+        std::cout << "Option -d -p need the additional options [pcap filename] [json filename]" << std::endl;
+        std::cout << "Usage : ./aeronSW-visualizer -d -p [lidar_filename.pcap] [metadata_filename.json]" << std::endl;
+    }
+}
+
+void printHowToUse(){
+    std::cout << "./aeronSW-visualizer -d [Lidar Data filename]" << std::endl;
+}
+
+void printUsage(){
+    std::cout << "[Arguments]" << std::endl;
+    std::cout << "-h, --help : Show you the Usage" << std::endl;
+    std::cout << "-d, --data [option] [lidar filename] [metadata filename]\n"
+                            "\t\t\t\t: Data file path that you want to show" << std::endl;
+    std::cout << "-d -p [pcap_filename] [json_filename]" << std::endl;
+}
+
+std::string getFileExtension(const std::string& fileName) {
+    // 마지막 '.'의 위치를 찾음
+    size_t dotPos = fileName.rfind('.');
+    if (dotPos == std::string::npos) {
+        // '.'이 없다면 확장자가 없는 경우
+        return "";
+    }
+    // '.' 이후의 문자열 반환
+    return fileName.substr(dotPos + 1);
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {

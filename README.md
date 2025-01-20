@@ -1,12 +1,15 @@
 # 0. aeronSW-server 개요
  - 항공전자 서버용 코드 모음
  - ubuntu 20.04 환경
+ - cmake 3.26
 
 # 1. aeronSW_visualizer
  - 데모 + 디버깅을 위한 visualizer, opengl로 개발
+ - pcap parsing을 위한 third party
 
 ## Requirements
 
+1. install glut, glfw, glew, glm
 ```
 $ sudo apt install freeglut3-dev libglu1-mesa-dev mesa-common-dev
 $ sudo apt install mesa-utils
@@ -15,6 +18,35 @@ $ sudo apt isntall libglfw3-dev libglfw3
 $ sudo apt install libglm-dev
 ```
 
+2. install third_party
+ - requirements for ouster : jsoncpp, curl, spd, pcap, libtin, flatbuffers, optional-lite
+```
+$ sudo apt install libjsoncpp-dev
+$ sudo apt install libcurl4-openssl-dev
+$ sudo apt install libspdlog-dev
+$ sudo apt install libpcap-dev
+$ sudo apt install libtins-dev
+$ sudo apt install flatbuffers-compiler libflatbuffers-dev
+```
+ - optional lite
+```
+$ cd third_party
+$ git clone https://github.com/martinmoene/optional-lite.git
+$ cd optional-lite
+$ mkdir build && cd build
+$ cmake ..
+$ make
+```
+ - ouster sdk 
+```
+$ cd third_party
+$ git clone https://github.com/ouster-lidar/ouster_example.git
+$ cd ouster_example
+$ mkdir build && cd build
+$ cmake ..
+$ make
+$ sudo make install
+```
 ## Build
 
 ```
@@ -22,8 +54,23 @@ $ cd visualizer
 $ mkdir build && cd build
 $ cmake ..
 $ make
-$ ./aeronSW_visualizer
 ```
+
+## Run
+
+```
+$ ./aeronSW_visualizer [option]
+```
+### Options
+1. -h : help
+2. -d : data file type : -d [option]</p>
+   2.1 -d -p : pcap data : -d -p [pcap file path] [metadata file path]
+   ```
+   ex)
+   $ ./aeronSW_visualizer -d -p \
+   $ ../../data/testData/sample_data.pcap \
+   $ ../../data/testData/sample_data.json
+   ```
 
 ## Work
 
