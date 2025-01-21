@@ -1,9 +1,11 @@
 #pragma once
 
 //INIT
-#define INIT_CAM_RADIUS     10.0f   //초기 카메라 위치 : 중심으로부터 거리
-#define INIT_CAM_VANGLE     -15.0f   //초기 카메라 위치 : 수직각도
-#define INIT_CAM_HANGLE     -15.0f   //초기 카메라 위치 : 수평각도
+#define INIT_CAM_RADIUS     50.0f   //초기 카메라 위치 : 중심으로부터 거리
+#define INIT_CAM_VANGLE     10.0f   //초기 카메라 위치 : 수직각도 // degree
+#define INIT_CAM_HANGLE     50.0f   //초기 카메라 위치 : 수평각도 // degree
+
+
 
 //window
 #define WINDOW_WIDTH    1200        //창 너비
@@ -22,4 +24,7 @@
 #define GRID_COEFFI     2
 
 // video configure
-#define VIDEO_SPEED     1       //배속
+#define VIDEO_SPEED     1                       //배속
+#define VIDEO_SPEED_CONTROL_RESOLUTION  0.05f   //조절배속
+#define VIDEO_SPEED_COEFFI_MAX  4.0f            //최대계수
+#define VIDEO_SPEED_COEFFI_MIN  0.05f            //최소계수

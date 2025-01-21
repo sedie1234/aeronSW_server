@@ -21,12 +21,24 @@ Space space;
 
 bool leftMousePressed = false;
 double lastMouseX = 0.0, lastMouseY = 0.0;
-float horizontalAngle = INIT_CAM_HANGLE, verticalAngle = INIT_CAM_VANGLE; // 카메라의 회전 각도
+float horizontalAngle = glm::radians(INIT_CAM_HANGLE * 360.0f / 100.0f), verticalAngle = glm::radians(INIT_CAM_VANGLE * 360.0f / 100.0f); // 카메라의 회전 각도
 float orbitRadius = INIT_CAM_RADIUS;                           // 궤도 반지름
 
-glm::vec3 cameraPosition(0.0f, 0.0f, 3.0f);
+// screen control
+// 0 : play // 1 : pause // 2 : prev frame // 3 : next frame
+int video_control = 0;
+float video_speed_coeffi = 1.0f;
+float prev_speed_coeffi = video_speed_coeffi;
+
+// camera position offset
+glm::vec3 cameraPosition(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraTarget(0.0f, 0.0f, 0.0f);
 glm::vec3 up(0.0f, 1.0f, 0.0f);
+
+
+float x = orbitRadius * glm::cos(verticalAngle) * glm::cos(horizontalAngle) + cameraPosition.x;
+float y = orbitRadius * glm::cos(verticalAngle) * glm::sin(horizontalAngle) + cameraPosition.y;
+float z = orbitRadius * glm::sin(verticalAngle) + cameraPosition.z;
 
 // argument callback function
 void printHowToUse();
@@ -95,12 +107,14 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    /**** time util ****/
-    TimeUtil time_util;
+
 
     /**** pcap lidar data example ****/
     PointCloud _cloud(lidar_filename, lidar_metadata_filename, lidar_data_type);
 
+    /**** time util ****/
+    TimeUtil time_util;
+    int ms_per_frame = 1000 / _cloud.getFreq() * VIDEO_SPEED;
 
     /**** Initialize GLFW ****/ 
     if (!glfwInit()) {
@@ -186,12 +200,29 @@ int main(int argc, char* argv[]) {
         // set frame
         _cloud.setField(frame_index);
 
-        int ms_per_frame = 1000 / _cloud.getFreq() * VIDEO_SPEED;
-        if(time_util.timeOverFromLastTime_ms(ms_per_frame)){
+        int new_ms_per_frame = ms_per_frame * video_speed_coeffi;
+        if(prev_speed_coeffi != video_speed_coeffi){
+            prev_speed_coeffi = video_speed_coeffi;
+            std::cout << "video speed changed! : coefficient = " << video_speed_coeffi << std::endl;
+        }
+        
+        if(time_util.timeOverFromLastTime_ms(new_ms_per_frame) && (video_control == 0)){ //video
             // next frame
             frame_index++;
             // time count
             time_util.timeCheck();
+        }
+
+        if(video_control == 2){
+            if(frame_index > 0)
+                frame_index--;
+            video_control = 1;
+        }
+
+        if(video_control == 3){
+            if(frame_index < _cloud.getFrameSize())
+                frame_index++;
+            video_control = 1;
         }
 
         // draw points of frame
@@ -318,20 +349,35 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         glm::vec3 cameraOrthoDirection(-glm::sin(horizontalAngle),
                                        glm::cos(horizontalAngle),
                                        0.0f);
-        if (key == GLFW_KEY_W) {
+        if (key == GLFW_KEY_W) {                            //w
             cameraPosition -= CAMERA_SPEED * cameraDirection; // 앞으로 이동
             cameraTarget -= CAMERA_SPEED * cameraDirection; // 앞으로 이동
-        } else if (key == GLFW_KEY_S) {
+        } else if (key == GLFW_KEY_S) {                     //s
             cameraPosition += CAMERA_SPEED * cameraDirection; // 뒤로 이동
             cameraTarget += CAMERA_SPEED * cameraDirection; // 뒤로 이동
-        } else if (key == GLFW_KEY_A) {
+        } else if (key == GLFW_KEY_A) {                     //a
             cameraPosition -= CAMERA_SPEED * cameraOrthoDirection; // 왼쪽 이동
             cameraTarget -= CAMERA_SPEED * cameraOrthoDirection; // 왼쪽 이동
-        } else if (key == GLFW_KEY_D) {
+        } else if (key == GLFW_KEY_D) {                     //d
             cameraPosition += CAMERA_SPEED * cameraOrthoDirection; // 오른쪽 이동
             cameraTarget += CAMERA_SPEED * cameraOrthoDirection; // 오른쪽 이동
-        } else if (key == GLFW_KEY_ESCAPE) {
+        } else if (key == GLFW_KEY_ESCAPE) {                //esc
             glfwSetWindowShouldClose(window, GLFW_TRUE);
+        } else if (key == GLFW_KEY_P) {                     //p
+            if(video_control != 1)
+                video_control = 1;                          //pause
+            else
+                video_control = 0;                          //play
+        } else if (key == GLFW_KEY_Q) {                     //q
+            video_control = 2;                              //previous frame
+        } else if (key == GLFW_KEY_E) {                     //e
+            video_control = 3;                              //next frame
+        } else if (key == GLFW_KEY_PAGE_DOWN){              //page down
+            if (video_speed_coeffi < VIDEO_SPEED_COEFFI_MAX)
+                video_speed_coeffi += VIDEO_SPEED_CONTROL_RESOLUTION; //video speed down
+        } else if (key == GLFW_KEY_PAGE_UP){                //page up
+            if (video_speed_coeffi > VIDEO_SPEED_COEFFI_MIN)
+                video_speed_coeffi -= VIDEO_SPEED_CONTROL_RESOLUTION; //video speed up
         }
     }
 }
