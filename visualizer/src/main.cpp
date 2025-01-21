@@ -169,11 +169,20 @@ int main(int argc, char* argv[]) {
 
 
         /**** draw screen ****/
+
+        // init space
         space.clearPoints();
         space.clearLines();
         space.drawGrid();
 
+        static int frame_index;
+        std::cout << "frame index : " << frame_index << std::endl;
+        _cloud.clearField();
+        _cloud.setField(frame_index++);
         _cloud.drawPoints();
+        if(frame_index == _cloud.getFrameSize()){
+            frame_index = _cloud.getFrameSize() - 1;
+        }
 
         space.addObj(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f),
                     glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -303,7 +312,6 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         } else if (key == GLFW_KEY_ESCAPE) {
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         }
-        std::cout << horizontalAngle << ", " <<  cameraPosition.x << ", " << cameraPosition.y << std::endl;
     }
 }
 
