@@ -12,6 +12,7 @@
 #include "space.h"
 #include "configs.h"
 #include "point_cloud.h"
+#include "time_util.h"
 
 
 // Globals
@@ -94,6 +95,9 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    /**** time util ****/
+    TimeUtil time_util;
+
     /**** pcap lidar data example ****/
     PointCloud _cloud(lidar_filename, lidar_metadata_filename, lidar_data_type);
 
@@ -166,7 +170,7 @@ int main(int argc, char* argv[]) {
         // Clear screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
+        
 
         /**** draw screen ****/
 
@@ -175,15 +179,30 @@ int main(int argc, char* argv[]) {
         space.clearLines();
         space.drawGrid();
 
+        // frame init
         static int frame_index;
-        std::cout << "frame index : " << frame_index << std::endl;
         _cloud.clearField();
-        _cloud.setField(frame_index++);
+
+        // set frame
+        _cloud.setField(frame_index);
+
+        int ms_per_frame = 1000 / _cloud.getFreq() * VIDEO_SPEED;
+        if(time_util.timeOverFromLastTime_ms(ms_per_frame)){
+            // next frame
+            frame_index++;
+            // time count
+            time_util.timeCheck();
+        }
+
+        // draw points of frame
         _cloud.drawPoints();
+
+        // if last frame, stay
         if(frame_index == _cloud.getFrameSize()){
             frame_index = _cloud.getFrameSize() - 1;
         }
 
+        // example for adding and showing object x, y, z axis
         space.addObj(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f),
                     glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
@@ -200,6 +219,8 @@ int main(int argc, char* argv[]) {
 
         space.addObj(obj1Position, obj1E1, obj1E2, obj1E3);
         space.addObj(obj3Position, obj3E1, obj3E2, obj3E3);
+
+        // example for drawing spring
 
         // 스프링 매개변수
         int numPoints = 200;       // 총 포인트 개수

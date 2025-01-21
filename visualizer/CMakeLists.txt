@@ -47,6 +47,7 @@ set(SRC_FILES
     src/camera.cpp
     src/space.cpp
     src/point_cloud.cpp
+    src/time_util.cpp
 )
 
 set(HEADER_FILES
@@ -54,6 +55,7 @@ set(HEADER_FILES
     src/space.h
     src/configs.h
     src/point_cloud.h
+    src/time_util.h
 )
 
 # Execution files

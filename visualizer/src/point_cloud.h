@@ -23,11 +23,12 @@ public:
     void printHelp(int index);
     void drawPoints();
     void getScanVecFromPcap(const std::string& pcap_path, const std::string& metadata_path);
-    
+
     // set field (points) to draw frame, get index's field data from vec_scan
     void setField(int index);
     void clearField();
     int getFrameSize();
+    int getFreq();
 
     // get scan from pcap file
     void get_complete_scan(std::shared_ptr<ouster::sensor_utils::playback_handle> handle);
@@ -45,5 +46,6 @@ private:
 
     //lidar info
     ouster::sensor::sensor_info info;
+
 
 };

@@ -88,25 +88,22 @@ PointCloud::PointCloud(std::string filename, std::string metafilename, int filet
 // Get scan as parse pcap file
 void PointCloud::getScanVecFromPcap(const std::string& pcap_path, const std::string& metadata_path) {
 
-    // ouster::sensor_utils::replay_initialize(pcap_path);
-    // auto stream_info = ouster::sensor_utils::get_stream_info(pcap_path);
-    // std::cout << *stream_info << std::endl;
-
     auto handle = ouster::sensor_utils::replay_initialize(pcap_path);
     info = ouster::sensor::metadata_from_json(metadata_path);
 
     size_t w = info.format.columns_per_frame;
     size_t h = info.format.pixels_per_column;
 
-    // auto scan = ouster::LidarScan(info);
-
     std::cerr << "Reading in scan from pcap..." << std::endl;
-
 
     get_complete_scan(handle);
 
     lut = ouster::make_xyz_lut(info, true);
 
+}
+
+int PointCloud::getFreq(){
+    return info.format.fps;
 }
 
 void PointCloud::clearField(){
@@ -118,7 +115,6 @@ void PointCloud::setField(int index){
 
         auto it = vec_scan.begin();
         auto range = (it + index)->field(ouster::sensor::ChanField::RANGE);
-        std::cout << "here!!\n";
         auto cloud = cartesian(range, lut);
         //! [doc-etag-cpp-xyz]
         //

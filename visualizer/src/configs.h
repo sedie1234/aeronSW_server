@@ -20,3 +20,6 @@
 #define GRID_NUM        16
 #define GRID_Z_OFFSET   -0.01f
 #define GRID_COEFFI     2
+
+// video configure
+#define VIDEO_SPEED     1       //배속
