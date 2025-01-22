@@ -8,8 +8,8 @@
 
 
 //window
-#define WINDOW_WIDTH    1200        //창 너비
-#define WINDOW_HEIGHT   800         //창 높이
+#define WINDOW_WIDTH    1920        //창 너비
+#define WINDOW_HEIGHT   1080         //창 높이
 
 // Constants
 #define ORBIT_SPEED         0.01f   // 궤도 회전 속도

@@ -109,6 +109,9 @@ int PointCloud::getFreq(){
 void PointCloud::clearField(){
     field.clear();
     std::vector<glm::vec3>().swap(field);
+
+    color_field.clear();
+    std::vector<std::pair<glm::vec3, uint32_t>>().swap(color_field);
 }
 
 void PointCloud::setField(int index){
@@ -116,14 +119,75 @@ void PointCloud::setField(int index){
         auto it = vec_scan.begin();
         auto range = (it + index)->field(ouster::sensor::ChanField::RANGE);
         auto cloud = cartesian(range, lut);
+
+        //////////////////test
+        Eigen::Array<uint32_t, -1, -1, Eigen::RowMajor> reflectivity;
+        reflectivity = (it+index)->field<uint8_t>(ouster::sensor::ChanField::REFLECTIVITY).cast<uint32_t>();
+        reflectivities.push_back(reflectivity);
+        // auto signal = (it+index)->field<uint8_t>(ouster::sensor::ChanField::SIGNAL).cast<uint32_t>();
+        auto reflectivity_destaggered = ouster::destagger<uint32_t>(reflectivity, info.format.pixel_shift_by_row);
+
+        // std::cout << "range size : " << range.size() << std::endl;
+        // std::cout << "signal size : " << signal.size() << std::endl;
+        // std::cout << "reflectivity size : " << reflectivity.size() << std::endl;
+
+        // reflectivity example
+        size_t w = info.format.columns_per_frame;   //data along channel
+        size_t h = info.format.pixels_per_column;   //channels
+        
+        // std::cout << "reflectivity : " << reflectivity(print_row, print_column) << " : " << 
+                    // reflectivity_destaggered(print_row, print_column) << std::endl;
+
+        // signal example
+        if(isFieldAvailable(*(it+index), ouster::sensor::ChanField::SIGNAL)){
+            // if signal data exist, this is the way how to get signal data
+            auto signal_field = (it+index)->field<uint32_t>(ouster::sensor::ChanField::SIGNAL);
+            std::cout << signal_field(0, 0) << std::endl;
+        }else{
+            // test data has no signal data
+        } 
+        //////////////////test
+
+
         //! [doc-etag-cpp-xyz]
         //
-        
+
+        if(range.size() == w*h){
+            reflect_flag = 1;
+        }else{
+            std::cout << "range size is not equal to w*h" << std::endl;
+            reflect_flag = 0;
+        }
+
         for(int i=0; i<range.size(); i++){
             glm::vec3 point(cloud(i, 0), cloud(i, 1), cloud(i, 2));
             field.push_back(point);
+
+            if(reflect_flag){
+                // std::cout << "w : " << i%w << ", h : " << i/w << std::endl;
+                uint32_t reflect = reflectivity_destaggered(i/w, i%w);
+                destaggered_reflectivities.push_back(reflect);
+                std::pair<glm::vec3, uint32_t> _color_point(point, reflect);
+                color_field.push_back(_color_point);
+            }
+
+            //////////////////test
+            // std::cout << i << "th range : " << cloud(i, 0) << ", " << cloud(i, 1) << ", " << cloud(i, 2) << std::endl;
+            // std::cout << i << "th signal : " << signal << std::endl;
+            
+            //////////////////test
         }
         return;
+}
+
+bool PointCloud::isFieldAvailable(ouster::LidarScan& scan, const char* _field){
+            
+    try{
+        scan.field<uint32_t>(_field);
+        return true;
+    }catch(const std::invalid_argument&){
+        return false;
+    }
 }
 
 int PointCloud::getFrameSize(){
@@ -132,10 +196,26 @@ int PointCloud::getFrameSize(){
 
 void PointCloud::drawPoints(){
 
-    for(auto &point: field){
-        space.addPoint(point);
+    float color_sense;
+
+    if(reflect_flag){
+        // for(int i=0; i<field.size(); i++){
+        //     color_sense = destaggered_reflectivities[i]/200.0f;
+        //     glm::vec3 color(1.0f - color_sense, color_sense, 0.0f);
+        //     space.addPoint(field[i], color);
+        // }
+        for(auto &point: color_field){
+            color_sense = point.second / 26.54f;
+            glm::vec3 color(0.0f, 0.973f - color_sense, 0.364f + color_sense);
+            space.addPoint(point.first, color);
+        }
+
+    }else{
+        for(auto &point: field){
+            space.addPoint(point);
+        }
     }
-    
+
     return;
 }
 

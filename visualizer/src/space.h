@@ -9,6 +9,7 @@
 class Space {
 public:
     void addPoint(const glm::vec3& point);
+    void addPoint(const glm::vec3& point, const glm::vec3& color);
     void clearPoints();
     void addLine(const glm::vec3& start, const glm::vec3& end,
                 const GLfloat R, const GLfloat G, const GLfloat B);
@@ -19,10 +20,9 @@ public:
     void render() const;
 
 private:
-    // time series points
-    // 
-    std::vector<std::pair<int, std::vector<glm::vec3>>> ts_points; //time series points
-    std::vector<glm::vec3> points;
+    //time series points
+    std::vector<std::pair<int, std::vector<glm::vec3>>> ts_points; 
+    std::vector<std::pair<glm::vec3, glm::vec3>> points; //point, color
     //start point, end point, R, G, B
     std::vector<std::tuple<glm::vec3, glm::vec3, GLfloat, GLfloat, GLfloat>> lines; 
     

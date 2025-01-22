@@ -30,6 +30,9 @@ public:
     int getFrameSize();
     int getFreq();
 
+    // whether field exist or not?
+    bool isFieldAvailable(ouster::LidarScan& scan, const char* _field);
+
     // get scan from pcap file
     void get_complete_scan(std::shared_ptr<ouster::sensor_utils::playback_handle> handle);
 
@@ -37,6 +40,9 @@ private:
 
     // fields = array of points, 1 frame to draw
     std::vector<glm::vec3> field;
+
+    // new version field with color
+    std::vector<std::pair<glm::vec3, uint32_t>> color_field;
 
     // vec_scan = array of frame, video, include range, intesity, ... and so on.
     std::vector<ouster::LidarScan> vec_scan;
@@ -47,5 +53,10 @@ private:
     //lidar info
     ouster::sensor::sensor_info info;
 
+    std::vector<Eigen::Array<uint32_t, -1, -1, Eigen::RowMajor>> reflectivities;
+
+    std::vector<uint32_t> destaggered_reflectivities;
+
+    int reflect_flag;
 
 };

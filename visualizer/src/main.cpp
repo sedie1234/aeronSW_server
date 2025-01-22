@@ -274,9 +274,9 @@ int main(int argc, char* argv[]) {
             points.emplace_back(x+5, y+3, z+1);
         }
 
-        for(auto &point : points){
-            space.addPoint(point);
-        }
+        // for(auto &point : points){
+        //     space.addPoint(point);
+        // }
 
 
 

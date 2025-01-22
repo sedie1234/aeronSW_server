@@ -8,12 +8,22 @@
 extern float orbitRadius;
 
 void Space::addPoint(const glm::vec3& point) {
-    points.push_back(point);
+    std::pair<glm::vec3, glm::vec3> _point;
+    _point.first = point;
+    _point.second = glm::vec3(1.0f, 0.0f, 0.0f); //default = red
+    points.push_back(_point);
+}
+
+void Space::addPoint(const glm::vec3& point, const glm::vec3& color){
+    std::pair<glm::vec3, glm::vec3> _point;
+    _point.first = point;
+    _point.second = color;
+    points.push_back(_point);
 }
 
 void Space::clearPoints(){
     points.clear();
-    std::vector <glm::vec3>().swap(points);
+    std::vector <std::pair<glm::vec3, glm::vec3>>().swap(points);
 }
 
 void Space::addLine(const glm::vec3& start, const glm::vec3& end,
@@ -35,9 +45,10 @@ void Space::addObj(const glm::vec3& point, const glm::vec3& xway,
 }
 
 // Helper function to draw a circle
-void drawCircle(const glm::vec3& center, float radius, int segments) {
+void drawCircle(const glm::vec3& center, float radius, int segments, const glm::vec3& color) {
     glBegin(GL_TRIANGLE_FAN);
-    glColor3f(1.0f, 0.0f, 0.0f);  // 동그라미 색상 (빨간색)
+    glColor3f((GLfloat)color.x, (GLfloat)color.y, (GLfloat)color.z);  // 동그라미 색상 (빨간색)
+
     glVertex3f(center.x, center.y, center.z);  // 중심점
 
     for (int i = 0; i <= segments; ++i) {
@@ -65,7 +76,7 @@ void Space::drawGrid(){
     }
 
     for(const auto &points : gridpoints){
-        addLine(points.first, points.second, 0.0f, 0.0f, 1.0f); //grid:: blue line
+        addLine(points.first, points.second, 0.6f, 0.6f, 0.6f); //grid:: blue line
     }
 }
 
@@ -74,7 +85,7 @@ void Space::render() const {
     float radius = 0.05f;  // 동그라미 크기 설정
     int segments = 30;     // 동그라미 세그먼트 (정확도)
     for (const auto& point : points) {
-        drawCircle(point, radius, segments);
+        drawCircle(point.first, radius, segments, point.second);
     }
 
     // Draw lines
