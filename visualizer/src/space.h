@@ -19,7 +19,7 @@ public:
     void drawGrid();
     void render() const;
 
-private:
+// private:
     //time series points
     std::vector<std::pair<int, std::vector<glm::vec3>>> ts_points; 
     std::vector<std::pair<glm::vec3, glm::vec3>> points; //point, color

@@ -14,6 +14,12 @@
 #include "point_cloud.h"
 #include "time_util.h"
 
+#include "opencv2/opencv.hpp"
+
+// 2D screen test
+cv::Mat color_image = cv::Mat::zeros(PANORAMA_WINDOW_HEIGHT, PANORAMA_WINDOW_WIDTH, CV_8UC3);
+void drawImage(PointCloud cloud);
+
 
 // Globals
 Camera camera;
@@ -233,46 +239,49 @@ int main(int argc, char* argv[]) {
             frame_index = _cloud.getFrameSize() - 1;
         }
 
-        // example for adding and showing object x, y, z axis
-        space.addObj(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f),
-                    glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        //2d test
+        drawImage(_cloud);
 
-        glm::vec3 obj1Position(2.0f, 3.0f, -5.0f);
-        glm::vec3 obj1E1(0.577f, 0.577f, 0.577f);  // 대각선 방향
-        glm::vec3 obj1E2(-0.707f, 0.707f, 0.0f);   // X-Y 평면에서 직교
-        glm::vec3 obj1E3(-0.408f, -0.408f, 0.816f); // Z축에서 직교
+        // // example for adding and showing object x, y, z axis
+        // space.addObj(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f),
+        //             glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-        glm::vec3 obj3Position(-2.0f, -1.0f, 4.0f);
-        glm::vec3 obj3E1(0.577f, 0.577f, 0.577f);  // X, Y, Z 축 동일 기여
-        glm::vec3 obj3E2(-0.707f, 0.707f, 0.0f);   // X-Y 평면에서 대각선
-        glm::vec3 obj3E3(-0.408f, -0.408f, 0.816f); // Z축 기여 증가
+        // glm::vec3 obj1Position(2.0f, 3.0f, -5.0f);
+        // glm::vec3 obj1E1(0.577f, 0.577f, 0.577f);  // 대각선 방향
+        // glm::vec3 obj1E2(-0.707f, 0.707f, 0.0f);   // X-Y 평면에서 직교
+        // glm::vec3 obj1E3(-0.408f, -0.408f, 0.816f); // Z축에서 직교
+
+        // glm::vec3 obj3Position(-2.0f, -1.0f, 4.0f);
+        // glm::vec3 obj3E1(0.577f, 0.577f, 0.577f);  // X, Y, Z 축 동일 기여
+        // glm::vec3 obj3E2(-0.707f, 0.707f, 0.0f);   // X-Y 평면에서 대각선
+        // glm::vec3 obj3E3(-0.408f, -0.408f, 0.816f); // Z축 기여 증가
 
 
-        space.addObj(obj1Position, obj1E1, obj1E2, obj1E3);
-        space.addObj(obj3Position, obj3E1, obj3E2, obj3E3);
+        // space.addObj(obj1Position, obj1E1, obj1E2, obj1E3);
+        // space.addObj(obj3Position, obj3E1, obj3E2, obj3E3);
 
-        // example for drawing spring
+        // // example for drawing spring
 
-        // 스프링 매개변수
-        int numPoints = 200;       // 총 포인트 개수
-        float radius = 1.0f;      // 스프링 반지름
-        float height = 10.0f;     // 스프링 전target체 높이
-        int turns = 3;            // 스프링의 회전 수
+        // // 스프링 매개변수
+        // int numPoints = 200;       // 총 포인트 개수
+        // float radius = 1.0f;      // 스프링 반지름
+        // float height = 10.0f;     // 스프링 전target체 높이
+        // int turns = 3;            // 스프링의 회전 수
 
-        // 포인트 저장 벡터
-        std::vector<glm::vec3> points;
+        // // 포인트 저장 벡터
+        // std::vector<glm::vec3> points;
 
-        // 스프링 포인트 계산 및 저장
-        for (int i = 0; i < numPoints; ++i) {
-            float t = static_cast<float>(i) / numPoints; // 0 ~ 1 비율
-            float theta = glm::two_pi<float>() * turns * t; // 나선형 각도
-            float z = height * t;                          // 높이 증가
+        // // 스프링 포인트 계산 및 저장
+        // for (int i = 0; i < numPoints; ++i) {
+        //     float t = static_cast<float>(i) / numPoints; // 0 ~ 1 비율
+        //     float theta = glm::two_pi<float>() * turns * t; // 나선형 각도
+        //     float z = height * t;                          // 높이 증가
 
-            float x = radius * glm::cos(theta); // X 좌표
-            float y = radius * glm::sin(theta); // Y 좌표
+        //     float x = radius * glm::cos(theta); // X 좌표
+        //     float y = radius * glm::sin(theta); // Y 좌표
 
-            points.emplace_back(x+5, y+3, z+1);
-        }
+        //     points.emplace_back(x+5, y+3, z+1);
+        // }
 
         // for(auto &point : points){
         //     space.addPoint(point);
@@ -422,3 +431,33 @@ void setupViewport(const GLuint width, const GLuint height) {
     gluPerspective(45.0, static_cast<double>(width) / height, 0.1, 100.0);
 }
 
+
+
+void drawImage(PointCloud cloud){
+    
+    color_image = cv::Scalar(0, 0, 0);  // 이미지 초기화
+
+    for (size_t i = 0; i < space.points.size(); i ++) {
+        float x = space.points[i].first[0];
+        float y = space.points[i].first[1];
+        float z = space.points[i].first[2];
+
+        float longitude = atan2(y, x);  // -π ~ π
+        float latitude = ZOOM*asin(z / sqrt(x*x + y*y + z*z));  // -π/2 ~ π/2
+
+        int px = (int)((longitude + M_PI) / (2 * M_PI) * color_image.cols);
+        int py = (int)((latitude + M_PI / 2) / M_PI * color_image.rows);
+
+        if (px >= 0 && px < color_image.cols && py >= 0 && py < color_image.rows) {
+            color_image.at<cv::Vec3b>(PANORAMA_WINDOW_HEIGHT - py, PANORAMA_WINDOW_WIDTH - px) 
+            = cv::Vec3b(space.points[i].second[2]*255.0, 
+                        space.points[i].second[2]*255.0, 
+                        space.points[i].second[2]*255.0);
+        }
+        
+    }
+
+    cv::imshow("Panorama View", color_image);
+    cv::waitKey(1);
+
+}

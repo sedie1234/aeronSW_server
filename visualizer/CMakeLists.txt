@@ -36,6 +36,10 @@ find_package(jsoncpp REQUIRED)
 include_directories(/usr/include/jsoncpp)
 link_directories(/usr/lib/x86_64-linux-gnu)
 
+# opencv library
+find_package(OpenCV 4.2 REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
 #optional-lite
 find_path(OPTIONAL_LITE_INCLUDE_DIRS "optional.hpp" PATHS "/usr/local/include" "/usr/include")
 include_directories(${OPTIONAL_LITE_DIR})
@@ -74,6 +78,7 @@ target_link_libraries(${PROJECT_NAME}
     ${PCAP_LIBRARIES}
     OusterSDK::ouster_client
     OusterSDK::ouster_pcap
+    ${OpenCV_LIBS}
 )
 
 # Add the include directory
@@ -81,5 +86,4 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     src
     ${EIGEN3_INCLUDE_DIR}
     ${PCAP_INCLUDE_DIRS}
-
 )

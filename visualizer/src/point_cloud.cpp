@@ -151,7 +151,7 @@ void PointCloud::setField(int index){
 
         //! [doc-etag-cpp-xyz]
         //
-
+        // std::cout << "w : " << w << ", h : " << h << std::endl;
         if(range.size() == w*h){
             reflect_flag = 1;
         }else{
@@ -177,6 +177,8 @@ void PointCloud::setField(int index){
             
             //////////////////test
         }
+
+        // std::cout << "field size : " << color_field.size() << ", " << color_field[0].second << std::endl;
         return;
 }
 

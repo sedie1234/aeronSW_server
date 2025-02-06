@@ -36,13 +36,13 @@ public:
     // get scan from pcap file
     void get_complete_scan(std::shared_ptr<ouster::sensor_utils::playback_handle> handle);
 
+    std::vector<std::pair<glm::vec3, uint32_t>> color_field;
 private:
 
     // fields = array of points, 1 frame to draw
     std::vector<glm::vec3> field;
 
     // new version field with color
-    std::vector<std::pair<glm::vec3, uint32_t>> color_field;
 
     // vec_scan = array of frame, video, include range, intesity, ... and so on.
     std::vector<ouster::LidarScan> vec_scan;
